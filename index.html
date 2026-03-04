@@ -570,15 +570,24 @@ const CAT_SLUG = {
 };
 
 // ── INIT ──
-if (apiKey && fbUrl && binId) {
-  document.getElementById('setup-key').value = apiKey;
-  document.getElementById('setup-fb').value = fbUrl;
-  document.getElementById('setup-binid').value = binId;
-  showScreen('screen-main');
-  loadFromDB();
-} else {
-  showScreen('screen-setup');
-}
+(function init() {
+  // load cache instantly before ANY screen shows
+  const cached = localStorage.getItem('pantry_inv_cache');
+  if (cached) {
+    try { inventory = JSON.parse(cached); } catch(e) { inventory = []; }
+  }
+
+  if (apiKey && fbUrl && binId) {
+    document.getElementById('setup-key').value = apiKey;
+    document.getElementById('setup-fb').value = fbUrl;
+    document.getElementById('setup-binid').value = binId;
+    showScreen('screen-main');
+    renderAll(); // show cache immediately
+    syncFromDB(); // then sync in background
+  } else {
+    showScreen('screen-setup');
+  }
+})();
 
 function startApp() {
   const k = document.getElementById('setup-key').value.trim();
@@ -686,32 +695,25 @@ async function saveInv() {
   } catch(e) { toast('⚠ Speichern fehlgeschlagen'); }
 }
 
-async function loadFromDB() {
-  // immediately show cached version so screen is never empty
-  const cached = localStorage.getItem('pantry_inv_cache');
-  if (cached) {
-    inventory = JSON.parse(cached);
-    renderAll();
-  }
+async function syncFromDB() {
   try {
     const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
       headers: { 'X-Master-Key': fbUrl }
     });
     const data = await res.json();
-    inventory = data?.record?.inventory || [];
+    const fresh = data?.record?.inventory || [];
+    inventory = fresh;
     localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
     renderAll();
     startPolling();
   } catch(e) {
-    if (!cached) {
-      toast('⚠ JSONBin nicht erreichbar — Keys prüfen');
-      inventory = [];
-      renderAll();
-    } else {
-      toast('⚠ Offline — zeige gespeicherte Daten');
-      startPolling();
-    }
+    // keep showing cached data, just start polling to retry
+    startPolling();
   }
+}
+
+async function loadFromDB() {
+  await syncFromDB();
 }
 
 function startPolling() {
@@ -725,6 +727,7 @@ function startPolling() {
       const fresh = data?.record?.inventory || [];
       if (JSON.stringify(fresh) !== JSON.stringify(inventory)) {
         inventory = fresh;
+        localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
         renderAll();
         toast('🔄 Inventar aktualisiert');
       }

@@ -680,19 +680,20 @@ function changeQty(id, delta) {
 }
 
 // ── JSONBIN ──
-async function saveInv() {
-  // always save to local cache immediately
+function saveInv() {
+  // save locally immediately - this is the primary storage
   localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
-  try {
-    await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+  // sync to JSONBin in background (for family sharing)
+  if (binId && fbUrl) {
+    fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'X-Master-Key': fbUrl
       },
       body: JSON.stringify({ inventory })
-    });
-  } catch(e) { toast('⚠ Speichern fehlgeschlagen'); }
+    }).catch(() => {}); // silently ignore errors
+  }
 }
 
 async function syncFromDB() {

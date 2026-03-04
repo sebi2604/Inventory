@@ -413,10 +413,8 @@ body {
   <div class="setup-tagline">KI-gestütztes Familien-Inventar</div>
   <div class="setup-label">Anthropic API Key</div>
   <input class="setup-input" type="password" id="setup-key" placeholder="sk-ant-api03-…">
-  <div class="setup-label" style="margin-top:.5rem">JSONBin API Key</div>
-  <input class="setup-input" type="password" id="setup-fb" placeholder="$2a$10$…">
-  <div class="setup-label" style="margin-top:.5rem">JSONBin Bin ID</div>
-  <input class="setup-input" type="text" id="setup-binid" placeholder="6123abc4e3fd8f7e2d3b4567">
+  <input class="setup-input" type="text" id="setup-fb" style="display:none">
+  <input class="setup-input" type="text" id="setup-binid" style="display:none">
   <button class="setup-btn" onclick="startApp()">Los geht's →</button>
   <p class="setup-note">Alles kostenlos &amp; kein Abo. Alle Daten geteilt — jeder in der Familie sieht dasselbe Inventar live.</p>
 </div>
@@ -578,13 +576,11 @@ const CAT_SLUG = {
     try { inventory = JSON.parse(cached); } catch(e) { inventory = []; }
   }
 
-  if (apiKey && fbUrl && binId) {
+  if (apiKey) {
     document.getElementById('setup-key').value = apiKey;
-    document.getElementById('setup-fb').value = fbUrl;
-    document.getElementById('setup-binid').value = binId;
     showScreen('screen-main');
-    renderAll(); // show cache immediately
-    syncFromDB(); // then sync in background
+    renderAll();
+    loadFromDB();
   } else {
     showScreen('screen-setup');
   }
@@ -592,18 +588,11 @@ const CAT_SLUG = {
 
 function startApp() {
   const k = document.getElementById('setup-key').value.trim();
-  const fb = document.getElementById('setup-fb').value.trim();
-  const bid = document.getElementById('setup-binid').value.trim();
   if (!k || !k.startsWith('sk-')) { toast('⚠ Bitte Anthropic API Key eingeben'); return; }
-  if (!fb) { toast('⚠ Bitte JSONBin API Key eingeben'); return; }
-  if (!bid) { toast('⚠ Bitte Bin ID eingeben'); return; }
   apiKey = k;
-  fbUrl = fb;
-  binId = bid;
   localStorage.setItem('pantry_key', k);
-  localStorage.setItem('pantry_fb', fb);
-  localStorage.setItem('pantry_binid', bid);
   showScreen('screen-main');
+  renderAll();
   loadFromDB();
 }
 

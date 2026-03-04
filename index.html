@@ -679,68 +679,18 @@ function changeQty(id, delta) {
   renderAll();
 }
 
-// ── JSONBIN ──
+// ── STORAGE ──
 function saveInv() {
-  // save locally immediately - this is the primary storage
   localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
-  // sync to JSONBin in background (for family sharing)
-  if (binId && fbUrl) {
-    fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': fbUrl
-      },
-      body: JSON.stringify({ inventory })
-    }).catch(() => {}); // silently ignore errors
-  }
 }
 
-async function syncFromDB() {
-  try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-      headers: { 'X-Master-Key': fbUrl }
-    });
-    const data = await res.json();
-    const fresh = data?.record?.inventory;
-    // ONLY update if JSONBin has MORE items than local cache
-    // This prevents JSONBin from wiping local data
-    if (Array.isArray(fresh) && fresh.length >= inventory.length) {
-      inventory = fresh;
-      localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
-      renderAll();
-    } else if (inventory.length > 0) {
-      // local has more data - push it back to JSONBin
-      saveInv();
-    }
-    startPolling();
-  } catch(e) {
-    startPolling();
-  }
-}
-
-async function loadFromDB() {
-  await syncFromDB();
+function loadFromDB() {
+  // nothing extra needed - cache already loaded in init
+  renderAll();
 }
 
 function startPolling() {
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(async () => {
-    try {
-      const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-        headers: { 'X-Master-Key': fbUrl }
-      });
-      const data = await res.json();
-      const fresh = data?.record?.inventory;
-      if (Array.isArray(fresh) && fresh.length >= inventory.length &&
-          JSON.stringify(fresh) !== JSON.stringify(inventory)) {
-        inventory = fresh;
-        localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
-        renderAll();
-        toast('🔄 Inventar aktualisiert');
-      }
-    } catch(e) {}
-  }, 5000);
+  // no polling needed without external DB
 }
 
 // ── CAMERA ──

@@ -679,18 +679,62 @@ function changeQty(id, delta) {
   renderAll();
 }
 
-// ── STORAGE ──
+// ── GOOGLE SHEETS SYNC ──
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbxuX5sko0Ir9JubqvfqbiL3U8IJr44mSdlITGw50diTztgtDV75nX2D2YAR4_UvB6NwfA/exec";
+
 function saveInv() {
+  // always save locally first
   localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
+  // sync to Google Sheets in background
+  fetch(SHEET_URL, {
+    method: 'POST',
+    body: JSON.stringify({ inventory }),
+  }).catch(() => {});
 }
 
-function loadFromDB() {
-  // nothing extra needed - cache already loaded in init
+async function loadFromDB() {
+  // show local cache immediately
   renderAll();
+  // then try to load from Google Sheets
+  try {
+    const res = await fetch(SHEET_URL + '?t=' + Date.now());
+    const data = await res.json();
+    const fresh = data?.inventory;
+    if (Array.isArray(fresh) && fresh.length > 0) {
+      // use whichever has more items
+      if (fresh.length >= inventory.length) {
+        inventory = fresh;
+        localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
+        renderAll();
+      } else {
+        // local has more - push to sheets
+        saveInv();
+      }
+    } else if (inventory.length > 0) {
+      saveInv(); // push local data to sheets
+    }
+    startPolling();
+  } catch(e) {
+    startPolling();
+  }
 }
 
 function startPolling() {
-  // no polling needed without external DB
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(SHEET_URL + '?t=' + Date.now());
+      const data = await res.json();
+      const fresh = data?.inventory;
+      if (Array.isArray(fresh) && fresh.length >= inventory.length &&
+          JSON.stringify(fresh) !== JSON.stringify(inventory)) {
+        inventory = fresh;
+        localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
+        renderAll();
+        toast('🔄 Inventar aktualisiert');
+      }
+    } catch(e) {}
+  }, 8000);
 }
 
 // ── CAMERA ──

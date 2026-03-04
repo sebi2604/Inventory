@@ -154,15 +154,85 @@ body {
 .status-empty .inv-emoji-wrap { background:var(--red-light); }
 
 /* FAB */
+.fab-wrap { position:fixed; bottom:1.75rem; right:1.5rem; z-index:60; display:flex; flex-direction:column; align-items:flex-end; gap:.6rem; }
 .fab {
-  position:fixed; bottom:1.75rem; right:1.5rem;
   width:60px; height:60px; border-radius:18px;
   background:var(--ink); border:none; cursor:pointer;
   display:flex; align-items:center; justify-content:center;
   font-size:1.6rem; box-shadow:var(--shadow-lg);
-  transition:all .2s; z-index:60;
+  transition:all .2s;
 }
 .fab:active { transform:scale(.92); }
+.fab-mini {
+  display:flex; align-items:center; gap:.6rem;
+  opacity:0; transform:translateY(10px) scale(.9);
+  transition:all .2s; pointer-events:none;
+}
+.fab-mini.show { opacity:1; transform:none; pointer-events:all; }
+.fab-mini-btn {
+  width:46px; height:46px; border-radius:14px;
+  background:var(--card); border:1px solid var(--border);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem; box-shadow:var(--shadow);
+}
+.fab-mini-label {
+  background:var(--ink); color:var(--bg); border-radius:6px;
+  font-size:.72rem; font-family:'DM Mono',monospace;
+  padding:.25rem .6rem; white-space:nowrap;
+}
+
+/* ══ MANUAL ADD SCREEN ══ */
+#screen-manual { background:var(--bg); }
+.manual-header {
+  background:var(--card); border-bottom:1px solid var(--border);
+  padding:1.25rem; display:flex; align-items:center; gap:.75rem;
+  position:sticky; top:0; z-index:10;
+}
+.manual-header h2 { font-family:'Playfair Display',serif; font-size:1.2rem; }
+.manual-body { padding:1.25rem; display:flex; flex-direction:column; gap:1rem; }
+.field-label { font-size:.72rem; font-family:'DM Mono',monospace; color:var(--ink3); letter-spacing:.08em; text-transform:uppercase; margin-bottom:.35rem; }
+.field-input {
+  width:100%; background:var(--card); border:1px solid var(--border);
+  border-radius:8px; color:var(--ink); font-family:'DM Sans',sans-serif;
+  font-size:.92rem; padding:.75rem .9rem; outline:none; transition:border-color .2s;
+}
+.field-input:focus { border-color:var(--green); }
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+.unit-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; margin-top:.25rem; }
+.unit-pill {
+  padding:.5rem; border-radius:7px; border:1px solid var(--border);
+  background:var(--card); text-align:center; font-size:.8rem;
+  font-family:'DM Mono',monospace; cursor:pointer; transition:all .15s;
+}
+.unit-pill.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.cat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; }
+.cat-sel-pill {
+  padding:.5rem .4rem; border-radius:7px; border:1px solid var(--border);
+  background:var(--card); text-align:center; font-size:.72rem;
+  font-family:'DM Mono',monospace; cursor:pointer; transition:all .15s;
+}
+.cat-sel-pill.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.ki-suggest {
+  background:var(--green-light); border:1px solid var(--green);
+  border-radius:10px; padding:.85rem 1rem;
+  display:none; align-items:center; gap:.75rem;
+}
+.ki-suggest.show { display:flex; }
+.ki-suggest-info { flex:1; }
+.ki-suggest-info strong { font-size:.88rem; }
+.ki-suggest-info small { font-size:.72rem; color:var(--green); font-family:'DM Mono',monospace; display:block; margin-top:.1rem; }
+.ki-use-btn {
+  background:var(--green); color:#fff; border:none; border-radius:7px;
+  padding:.45rem .8rem; font-size:.78rem; font-weight:700; cursor:pointer;
+  font-family:'DM Sans',sans-serif; white-space:nowrap;
+}
+.add-confirm-btn {
+  width:100%; background:var(--ink); color:var(--bg); border:none;
+  border-radius:10px; padding:.95rem; font-family:'DM Sans',sans-serif;
+  font-weight:700; font-size:1rem; cursor:pointer; transition:all .15s;
+  margin-top:.5rem;
+}
+.add-confirm-btn:active { background:var(--green); }
 
 /* ══ SCAN SCREEN ══ */
 #screen-scan { background:#000; position:relative; }
@@ -339,11 +409,15 @@ body {
 <!-- ══ SETUP ══ -->
 <div class="screen active" id="screen-setup">
   <div class="setup-logo">Pan<span>try</span></div>
-  <div class="setup-tagline">KI-gestütztes Heiminventar</div>
+  <div class="setup-tagline">KI-gestütztes Familien-Inventar</div>
   <div class="setup-label">Anthropic API Key</div>
   <input class="setup-input" type="password" id="setup-key" placeholder="sk-ant-api03-…">
+  <div class="setup-label" style="margin-top:.5rem">JSONBin API Key</div>
+  <input class="setup-input" type="password" id="setup-fb" placeholder="$2a$10$…">
+  <div class="setup-label" style="margin-top:.5rem">JSONBin Bin ID</div>
+  <input class="setup-input" type="text" id="setup-binid" placeholder="6123abc4e3fd8f7e2d3b4567">
   <button class="setup-btn" onclick="startApp()">Los geht's →</button>
-  <p class="setup-note">Dein API Key wird nur lokal in diesem Browser gespeichert und nie weitergegeben. Du kannst ihn unter anthropic.com erstellen.</p>
+  <p class="setup-note">Alles kostenlos &amp; kein Abo. Alle Daten geteilt — jeder in der Familie sieht dasselbe Inventar live.</p>
 </div>
 
 <!-- ══ MAIN ══ -->
@@ -370,7 +444,17 @@ body {
     </div>
   </div>
 
-  <button class="fab" onclick="startScan()" title="Rechnung scannen">📷</button>
+  <div class="fab-wrap" id="fab-wrap">
+    <div class="fab-mini" id="fab-mini-scan">
+      <span class="fab-mini-label">Rechnung scannen</span>
+      <button class="fab-mini-btn" onclick="startScan()">📷</button>
+    </div>
+    <div class="fab-mini" id="fab-mini-manual">
+      <span class="fab-mini-label">Manuell hinzufügen</span>
+      <button class="fab-mini-btn" onclick="openManual()">✏️</button>
+    </div>
+    <button class="fab" id="fab-main" onclick="toggleFab()">＋</button>
+  </div>
 </div>
 
 <!-- ══ SCAN ══ -->
@@ -417,16 +501,66 @@ body {
   </div>
 </div>
 
+<!-- ══ MANUAL ADD ══ -->
+<div class="screen" id="screen-manual">
+  <div class="manual-header">
+    <button class="back-btn" style="color:var(--ink);font-size:1.3rem" onclick="showScreen('screen-main')">←</button>
+    <h2>Artikel hinzufügen</h2>
+  </div>
+  <div class="manual-body">
+    <div class="ki-suggest" id="ki-suggest">
+      <span style="font-size:1.4rem" id="ki-sug-emoji">🍚</span>
+      <div class="ki-suggest-info">
+        <strong id="ki-sug-name">Reis</strong>
+        <small id="ki-sug-detail">Getreide · ähnlicher Artikel bereits vorhanden</small>
+      </div>
+      <button class="ki-use-btn" onclick="mergeWithSuggestion()">Zusammenführen</button>
+    </div>
+
+    <div>
+      <div class="field-label">Artikelname *</div>
+      <input class="field-input" id="m-name" type="text" placeholder="z.B. Reis, Milch, Apfelsaft…" oninput="onNameInput(this.value)">
+    </div>
+    <div>
+      <div class="field-label">Marke (optional)</div>
+      <input class="field-input" id="m-brand" type="text" placeholder="z.B. Uncle Ben's, Milka…">
+    </div>
+    <div class="field-row">
+      <div>
+        <div class="field-label">Menge *</div>
+        <input class="field-input" id="m-qty" type="number" min="0.1" step="0.1" value="1">
+      </div>
+      <div>
+        <div class="field-label">Einheit</div>
+        <div class="unit-grid" id="unit-grid">
+          <div class="unit-pill active" onclick="selectUnit('Stk',this)">Stk</div>
+          <div class="unit-pill" onclick="selectUnit('Kg',this)">Kg</div>
+          <div class="unit-pill" onclick="selectUnit('L',this)">L</div>
+          <div class="unit-pill" onclick="selectUnit('Pkg',this)">Pkg</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="field-label">Kategorie</div>
+      <div class="cat-grid" id="cat-grid"></div>
+    </div>
+    <button class="add-confirm-btn" onclick="confirmManual()">✓ Hinzufügen</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
 // ── STATE ──
 let apiKey = localStorage.getItem('pantry_key') || '';
-let inventory = JSON.parse(localStorage.getItem('pantry_inv') || '[]');
+let fbUrl = localStorage.getItem('pantry_fb') || '';
+let binId = localStorage.getItem('pantry_binid') || '';
+let inventory = [];
 let detectedItems = [];
 let stream = null;
 let activeCat = 'Alle';
 let searchQ = '';
+let pollTimer = null;
 
 const CATS = ['Alle','Milchprodukte','Getreide','Snacks','Getränke','Fleisch','Gemüse','Obst','Backwaren','Tiefkühl','Sonstiges'];
 const CAT_SLUG = {
@@ -436,19 +570,31 @@ const CAT_SLUG = {
 };
 
 // ── INIT ──
-if (apiKey) {
+if (apiKey && fbUrl && binId) {
   document.getElementById('setup-key').value = apiKey;
+  document.getElementById('setup-fb').value = fbUrl;
+  document.getElementById('setup-binid').value = binId;
   showScreen('screen-main');
-  renderAll();
+  loadFromDB();
+} else {
+  showScreen('screen-setup');
 }
 
 function startApp() {
   const k = document.getElementById('setup-key').value.trim();
-  if (!k || !k.startsWith('sk-')) { toast('⚠ Bitte gültigen API Key eingeben'); return; }
+  const fb = document.getElementById('setup-fb').value.trim();
+  const bid = document.getElementById('setup-binid').value.trim();
+  if (!k || !k.startsWith('sk-')) { toast('⚠ Bitte Anthropic API Key eingeben'); return; }
+  if (!fb) { toast('⚠ Bitte JSONBin API Key eingeben'); return; }
+  if (!bid) { toast('⚠ Bitte Bin ID eingeben'); return; }
   apiKey = k;
+  fbUrl = fb;
+  binId = bid;
   localStorage.setItem('pantry_key', k);
+  localStorage.setItem('pantry_fb', fb);
+  localStorage.setItem('pantry_binid', bid);
   showScreen('screen-main');
-  renderAll();
+  loadFromDB();
 }
 
 function showScreen(id) {
@@ -524,7 +670,53 @@ function changeQty(id, delta) {
   renderAll();
 }
 
-function saveInv() { localStorage.setItem('pantry_inv', JSON.stringify(inventory)); }
+// ── JSONBIN ──
+async function saveInv() {
+  try {
+    await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': fbUrl
+      },
+      body: JSON.stringify({ inventory })
+    });
+  } catch(e) { toast('⚠ Speichern fehlgeschlagen'); }
+}
+
+async function loadFromDB() {
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+      headers: { 'X-Master-Key': fbUrl }
+    });
+    const data = await res.json();
+    inventory = data?.record?.inventory || [];
+    renderAll();
+    startPolling();
+  } catch(e) {
+    toast('⚠ JSONBin nicht erreichbar — Keys prüfen');
+    inventory = [];
+    renderAll();
+  }
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+        headers: { 'X-Master-Key': fbUrl }
+      });
+      const data = await res.json();
+      const fresh = data?.record?.inventory || [];
+      if (JSON.stringify(fresh) !== JSON.stringify(inventory)) {
+        inventory = fresh;
+        renderAll();
+        toast('🔄 Inventar aktualisiert');
+      }
+    } catch(e) {}
+  }, 5000);
+}
 
 // ── CAMERA ──
 async function startScan() {
@@ -688,6 +880,124 @@ function confirmItems() {
   showScreen('screen-main');
   renderAll();
   toast(`✓ ${detectedItems.length} Artikel ins Inventar übernommen!`);
+}
+
+// ── FAB ──
+let fabOpen = false;
+function toggleFab() {
+  fabOpen = !fabOpen;
+  document.getElementById('fab-main').textContent = fabOpen ? '✕' : '＋';
+  document.getElementById('fab-mini-scan').classList.toggle('show', fabOpen);
+  document.getElementById('fab-mini-manual').classList.toggle('show', fabOpen);
+}
+function closeFab() { fabOpen=false; document.getElementById('fab-main').textContent='＋'; document.getElementById('fab-mini-scan').classList.remove('show'); document.getElementById('fab-mini-manual').classList.remove('show'); }
+
+// ── MANUAL ADD ──
+let selectedUnit = 'Stk';
+let selectedCat = 'Sonstiges';
+let suggestedMergeId = null;
+
+function openManual() {
+  closeFab();
+  document.getElementById('m-name').value = '';
+  document.getElementById('m-brand').value = '';
+  document.getElementById('m-qty').value = '1';
+  selectedUnit = 'Stk';
+  selectedCat = 'Sonstiges';
+  suggestedMergeId = null;
+  document.getElementById('ki-suggest').classList.remove('show');
+  // reset unit pills
+  document.querySelectorAll('.unit-pill').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.unit-pill').classList.add('active');
+  // render cat grid
+  const cg = document.getElementById('cat-grid');
+  cg.innerHTML = CATS.filter(c=>c!=='Alle').map(c=>`
+    <div class="cat-sel-pill ${c===selectedCat?'active':''}" onclick="selectCat('${c}',this)">${c}</div>
+  `).join('');
+  showScreen('screen-manual');
+}
+
+function selectUnit(u, el) {
+  selectedUnit = u;
+  document.querySelectorAll('.unit-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function selectCat(c, el) {
+  selectedCat = c;
+  document.querySelectorAll('.cat-sel-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function onNameInput(val) {
+  if (!val.trim()) { document.getElementById('ki-suggest').classList.remove('show'); suggestedMergeId=null; return; }
+  // find similar item in inventory
+  const v = val.toLowerCase().trim();
+  const match = inventory.find(i =>
+    i.name.toLowerCase().includes(v) || v.includes(i.name.toLowerCase())
+  );
+  if (match) {
+    suggestedMergeId = match.id;
+    document.getElementById('ki-sug-emoji').textContent = match.emoji;
+    document.getElementById('ki-sug-name').textContent = match.name + (match.brand ? ' · ' + match.brand : '');
+    document.getElementById('ki-sug-detail').textContent = `${match.category} · bereits ${match.qty} ${match.unit} vorhanden → zusammenführen?`;
+    document.getElementById('ki-suggest').classList.add('show');
+  } else {
+    suggestedMergeId = null;
+    document.getElementById('ki-suggest').classList.remove('show');
+  }
+}
+
+function mergeWithSuggestion() {
+  const item = inventory.find(i=>i.id===suggestedMergeId);
+  if (!item) return;
+  const addQty = parseFloat(document.getElementById('m-qty').value) || 1;
+  item.qty += addQty;
+  saveInv();
+  showScreen('screen-main');
+  renderAll();
+  toast(`✓ ${item.emoji} ${item.name} — jetzt ${item.qty} ${item.unit}`);
+}
+
+function confirmManual() {
+  const name = document.getElementById('m-name').value.trim();
+  if (!name) { toast('⚠ Bitte einen Namen eingeben'); return; }
+  const qty = parseFloat(document.getElementById('m-qty').value) || 1;
+  const brand = document.getElementById('m-brand').value.trim() || null;
+
+  // check for existing same name+brand to merge automatically
+  const existing = inventory.find(i =>
+    i.name.toLowerCase() === name.toLowerCase() &&
+    (i.brand||'').toLowerCase() === (brand||'').toLowerCase()
+  );
+  if (existing) {
+    existing.qty += qty;
+    saveInv();
+    showScreen('screen-main');
+    renderAll();
+    toast(`✓ Mit ${existing.emoji} ${existing.name} zusammengeführt → ${existing.qty} ${existing.unit}`);
+    return;
+  }
+
+  const maxId = inventory.length ? Math.max(...inventory.map(i=>i.id)) : 0;
+  const emojiMap = {
+    'Milchprodukte':'🥛','Getreide':'🌾','Snacks':'🍫','Getränke':'🥤',
+    'Fleisch':'🥩','Gemüse':'🥦','Obst':'🍎','Backwaren':'🍞',
+    'Tiefkühl':'🧊','Sonstiges':'📦'
+  };
+  inventory.push({
+    id: maxId + 1,
+    name,
+    brand,
+    category: selectedCat,
+    emoji: emojiMap[selectedCat] || '📦',
+    qty,
+    unit: selectedUnit
+  });
+  saveInv();
+  showScreen('screen-main');
+  renderAll();
+  toast(`✓ ${name} hinzugefügt!`);
 }
 
 // ── TOAST ──

@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Pantry · KI Inventar</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;700&display=swap');
+
+:root {
+  --bg: #faf8f3;
+  --cream: #f2ede3;
+  --card: #ffffff;
+  --border: #e8e0d0;
+  --ink: #1a1612;
+  --ink2: #6b6158;
+  --ink3: #b0a898;
+  --green: #2d6a4f;
+  --green-light: #d8f3dc;
+  --amber: #c77b2a;
+  --amber-light: #fef3e2;
+  --red: #b5294e;
+  --red-light: #fde8ef;
+  --blue: #1a4a7a;
+  --blue-light: #e8f0fb;
+  --shadow: 0 2px 16px rgba(26,22,18,.08);
+  --shadow-lg: 0 8px 40px rgba(26,22,18,.14);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* ── SCREENS ── */
+.screen { display:none; flex-direction:column; min-height:100vh; }
+.screen.active { display:flex; }
+
+/* ══ ONBOARDING ══ */
+#screen-setup {
+  background: var(--ink);
+  color: var(--bg);
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  gap: 0;
+}
+.setup-logo { font-family:'Playfair Display',serif; font-size:3.5rem; font-weight:900; letter-spacing:-.03em; margin-bottom:.25rem; }
+.setup-logo span { color: #c8f135; }
+.setup-tagline { font-size:.9rem; color: #888; margin-bottom:3rem; font-weight:300; letter-spacing:.04em; }
+.setup-label { font-size:.72rem; font-family:'DM Mono',monospace; color:#888; letter-spacing:.1em; text-transform:uppercase; margin-bottom:.5rem; text-align:left; width:100%; }
+.setup-input {
+  width:100%; background:#ffffff10; border:1px solid #ffffff20;
+  border-radius:10px; color:#fff; font-family:'DM Mono',monospace;
+  font-size:.82rem; padding:.9rem 1rem; outline:none; margin-bottom:2rem;
+  transition:border-color .2s;
+}
+.setup-input:focus { border-color:#c8f135; }
+.setup-btn {
+  width:100%; background:#c8f135; color:#000; border:none;
+  border-radius:10px; padding:1rem; font-family:'DM Sans',sans-serif;
+  font-weight:700; font-size:1rem; cursor:pointer; transition:all .2s;
+}
+.setup-btn:hover { transform:translateY(-2px); box-shadow:0 6px 24px rgba(200,241,53,.4); }
+.setup-note { font-size:.72rem; color:#555; margin-top:1rem; line-height:1.6; }
+
+/* ══ MAIN APP ══ */
+#screen-main { background:var(--bg); }
+
+.top-bar {
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:1rem 1.25rem .75rem;
+  position:sticky; top:0; z-index:50;
+}
+.top-bar-row1 { display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem; }
+.app-name { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:900; letter-spacing:-.02em; }
+.app-name span { color:var(--green); }
+.settings-btn { background:none; border:none; font-size:1.3rem; cursor:pointer; padding:.2rem; }
+
+.search-bar {
+  display:flex; align-items:center; gap:.5rem;
+  background:var(--cream); border-radius:8px; padding:.5rem .75rem;
+}
+.search-bar input {
+  flex:1; background:none; border:none; outline:none;
+  font-family:'DM Sans',sans-serif; font-size:.88rem; color:var(--ink);
+}
+.search-bar span { color:var(--ink3); font-size:.9rem; }
+
+.cat-scroll {
+  display:flex; gap:.5rem; padding:.75rem 1.25rem;
+  overflow-x:auto; scrollbar-width:none;
+}
+.cat-scroll::-webkit-scrollbar { display:none; }
+.cat-pill {
+  white-space:nowrap; font-size:.75rem; font-family:'DM Mono',monospace;
+  padding:.3rem .8rem; border-radius:20px; border:1px solid var(--border);
+  background:var(--card); cursor:pointer; transition:all .15s;
+  color:var(--ink2);
+}
+.cat-pill.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+
+.inv-list { flex:1; padding:.5rem 1.25rem 6rem; display:flex; flex-direction:column; gap:.6rem; }
+
+.inv-item {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:.85rem 1rem;
+  display:flex; align-items:center; gap:.85rem;
+  box-shadow:var(--shadow);
+  animation: fadeUp .3s ease both;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+.inv-emoji-wrap {
+  width:44px; height:44px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.5rem; flex-shrink:0;
+  background:var(--cream);
+}
+.inv-info { flex:1; min-width:0; }
+.inv-name { font-weight:600; font-size:.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.inv-sub { font-size:.72rem; color:var(--ink3); font-family:'DM Mono',monospace; margin-top:.1rem; }
+.inv-cat-tag {
+  font-size:.65rem; font-family:'DM Mono',monospace;
+  padding:.15rem .45rem; border-radius:4px; margin-top:.3rem;
+  display:inline-block;
+}
+
+.qty-ctrl { display:flex; align-items:center; gap:.4rem; flex-shrink:0; }
+.qty-b {
+  width:28px; height:28px; border-radius:7px; border:1px solid var(--border);
+  background:var(--cream); cursor:pointer; font-size:1rem; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .15s; color:var(--ink);
+}
+.qty-b:active { transform:scale(.9); }
+.qty-b.minus:active { background:var(--red-light); border-color:var(--red); color:var(--red); }
+.qty-b.plus:active { background:var(--green-light); border-color:var(--green); color:var(--green); }
+.qty-num { font-family:'DM Mono',monospace; font-weight:500; font-size:.88rem; min-width:22px; text-align:center; }
+
+.status-low .inv-emoji-wrap { background:var(--amber-light); }
+.status-empty { opacity:.55; }
+.status-empty .inv-emoji-wrap { background:var(--red-light); }
+
+/* FAB */
+.fab {
+  position:fixed; bottom:1.75rem; right:1.5rem;
+  width:60px; height:60px; border-radius:18px;
+  background:var(--ink); border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.6rem; box-shadow:var(--shadow-lg);
+  transition:all .2s; z-index:60;
+}
+.fab:active { transform:scale(.92); }
+
+/* ══ SCAN SCREEN ══ */
+#screen-scan { background:#000; position:relative; }
+
+.scan-header {
+  position:absolute; top:0; left:0; right:0; z-index:10;
+  padding:1.25rem 1.25rem .75rem;
+  background:linear-gradient(to bottom, rgba(0,0,0,.8), transparent);
+  display:flex; align-items:center; gap:.75rem;
+}
+.back-btn { background:none; border:none; color:#fff; font-size:1.5rem; cursor:pointer; padding:.2rem; }
+.scan-title { color:#fff; font-family:'Playfair Display',serif; font-size:1.2rem; }
+
+#video-el {
+  width:100%; height:100vh; object-fit:cover;
+  display:block;
+}
+
+.scan-overlay-ui {
+  position:absolute; inset:0; pointer-events:none;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.scan-frame {
+  width:80vw; max-width:320px; aspect-ratio:3/4;
+  border:2px solid rgba(255,255,255,.6);
+  border-radius:12px; position:relative;
+}
+.scan-frame::before, .scan-frame::after,
+.scan-frame .c1::before, .scan-frame .c1::after {
+  content:''; position:absolute; width:20px; height:20px;
+  border-color:#c8f135; border-style:solid;
+}
+.scan-frame::before { top:-2px; left:-2px; border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
+.scan-frame::after { top:-2px; right:-2px; border-width:3px 3px 0 0; border-radius:0 4px 0 0; }
+.scan-frame .c1::before { bottom:-2px; left:-2px; border-width:0 0 3px 3px; border-radius:0 0 0 4px; }
+.scan-frame .c1::after { bottom:-2px; right:-2px; border-width:0 3px 3px 0; border-radius:0 0 4px 0; }
+.scan-line-anim {
+  position:absolute; left:5%; right:5%; height:2px;
+  background:linear-gradient(90deg, transparent, #c8f135, transparent);
+  animation:scanAnim 2.5s ease-in-out infinite;
+  box-shadow:0 0 10px #c8f135;
+}
+@keyframes scanAnim { 0%{top:5%} 100%{top:95%} }
+.scan-hint { color:rgba(255,255,255,.7); font-size:.8rem; margin-top:1.5rem; text-align:center; font-family:'DM Mono',monospace; }
+
+.shutter-area {
+  position:absolute; bottom:0; left:0; right:0;
+  padding:2rem 2rem 3rem;
+  background:linear-gradient(to top, rgba(0,0,0,.85), transparent);
+  display:flex; flex-direction:column; align-items:center; gap:1rem;
+}
+.shutter-btn {
+  width:72px; height:72px; border-radius:50%;
+  border:4px solid #fff; background:rgba(255,255,255,.15);
+  cursor:pointer; transition:all .15s; position:relative;
+  backdrop-filter:blur(4px);
+}
+.shutter-btn::after {
+  content:''; position:absolute; inset:6px;
+  border-radius:50%; background:#fff; transition:all .15s;
+}
+.shutter-btn:active::after { background:#c8f135; }
+.shutter-hint { color:rgba(255,255,255,.6); font-size:.75rem; font-family:'DM Mono',monospace; }
+
+/* hidden canvas */
+#snap-canvas { display:none; }
+
+/* ══ ANALYSIS SCREEN ══ */
+#screen-analysis {
+  background:var(--bg);
+}
+.analysis-header {
+  background:var(--card); border-bottom:1px solid var(--border);
+  padding:1.25rem; display:flex; align-items:center; gap:.75rem;
+  position:sticky; top:0; z-index:10;
+}
+.analysis-header h2 { font-family:'Playfair Display',serif; font-size:1.2rem; }
+
+.preview-img {
+  width:100%; max-height:220px; object-fit:cover;
+  border-bottom:1px solid var(--border);
+}
+
+.analysis-body { padding:1.25rem; flex:1; }
+
+.ai-status {
+  display:flex; align-items:center; gap:.75rem;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:1rem; margin-bottom:1.25rem;
+}
+.ai-spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.ai-status p { font-size:.85rem; font-weight:500; }
+.ai-status small { font-size:.72rem; color:var(--ink3); font-family:'DM Mono',monospace; }
+
+.detected-list { display:flex; flex-direction:column; gap:.6rem; }
+
+.detected-item {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:.85rem 1rem;
+  display:flex; align-items:center; gap:.75rem;
+  animation:fadeUp .3s ease both;
+}
+.det-emoji { font-size:1.5rem; width:36px; text-align:center; flex-shrink:0; }
+.det-info { flex:1; }
+.det-name { font-weight:600; font-size:.9rem; }
+.det-brand { font-size:.72rem; font-family:'DM Mono',monospace; color:var(--ink3); }
+.det-tags { display:flex; gap:.35rem; margin-top:.3rem; flex-wrap:wrap; }
+.det-tag {
+  font-size:.63rem; font-family:'DM Mono',monospace;
+  padding:.15rem .45rem; border-radius:4px;
+}
+.det-tag.cat { background:var(--blue-light); color:var(--blue); }
+.det-tag.qty { background:var(--green-light); color:var(--green); }
+.det-check { font-size:1.2rem; }
+
+.confirm-bar {
+  position:sticky; bottom:0;
+  background:var(--card); border-top:1px solid var(--border);
+  padding:1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+  display:flex; gap:.75rem;
+}
+.confirm-btn {
+  flex:1; padding:.85rem; border-radius:10px; border:none;
+  font-family:'DM Sans',sans-serif; font-weight:700; font-size:.9rem;
+  cursor:pointer; transition:all .15s;
+}
+.confirm-btn.primary { background:var(--ink); color:var(--bg); }
+.confirm-btn.primary:active { background:var(--green); }
+.confirm-btn.secondary { background:var(--cream); color:var(--ink2); }
+
+/* Category colors */
+.cat-milch { background:var(--blue-light); color:var(--blue); }
+.cat-getreide { background:var(--amber-light); color:var(--amber); }
+.cat-snacks { background:#fce4ec; color:#880e4f; }
+.cat-getraenke { background:#e3f2fd; color:#0d47a1; }
+.cat-fleisch { background:#fbe9e7; color:#bf360c; }
+.cat-gemuese { background:var(--green-light); color:var(--green); }
+.cat-obst { background:#fff3e0; color:#e65100; }
+.cat-backwaren { background:#fdf3e3; color:#7b4f20; }
+.cat-tiefkuehl { background:#e8eaf6; color:#283593; }
+.cat-sonstiges { background:var(--cream); color:var(--ink2); }
+
+/* Toast */
+#toast {
+  position:fixed; bottom:5rem; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--ink); color:var(--bg); border-radius:8px;
+  padding:.6rem 1.2rem; font-size:.82rem; white-space:nowrap;
+  opacity:0; transition:all .3s; z-index:200; pointer-events:none;
+}
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* Empty state */
+.empty-list { text-align:center; padding:3rem 1rem; color:var(--ink3); }
+.empty-list .e-icon { font-size:3rem; display:block; margin-bottom:.75rem; }
+.empty-list p { font-size:.85rem; }
+
+/* Stats row */
+.stats-row {
+  display:flex; gap:.6rem; padding:.5rem 1.25rem .25rem;
+  overflow-x:auto; scrollbar-width:none;
+}
+.stats-row::-webkit-scrollbar { display:none; }
+.stat-card {
+  flex-shrink:0; background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:.6rem .9rem; min-width:80px;
+}
+.stat-card .s-num { font-family:'DM Mono',monospace; font-weight:500; font-size:1.2rem; }
+.stat-card .s-lbl { font-size:.65rem; color:var(--ink3); font-family:'DM Mono',monospace; margin-top:.1rem; }
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP ══ -->
+<div class="screen active" id="screen-setup">
+  <div class="setup-logo">Pan<span>try</span></div>
+  <div class="setup-tagline">KI-gestütztes Heiminventar</div>
+  <div class="setup-label">Anthropic API Key</div>
+  <input class="setup-input" type="password" id="setup-key" placeholder="sk-ant-api03-…">
+  <button class="setup-btn" onclick="startApp()">Los geht's →</button>
+  <p class="setup-note">Dein API Key wird nur lokal in diesem Browser gespeichert und nie weitergegeben. Du kannst ihn unter anthropic.com erstellen.</p>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div class="screen" id="screen-main">
+  <div class="top-bar">
+    <div class="top-bar-row1">
+      <div class="app-name">Pan<span>try</span></div>
+      <button class="settings-btn" onclick="showScreen('screen-setup')" title="Einstellungen">⚙️</button>
+    </div>
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="search" placeholder="Artikel suchen…" oninput="filterInv(this.value)" id="search-inp">
+    </div>
+  </div>
+
+  <div class="cat-scroll" id="cat-scroll"></div>
+
+  <div class="stats-row" id="stats-row"></div>
+
+  <div class="inv-list" id="inv-list">
+    <div class="empty-list">
+      <span class="e-icon">📦</span>
+      <p>Noch keine Artikel.<br>Tippe auf 📷 und scanne eine Rechnung!</p>
+    </div>
+  </div>
+
+  <button class="fab" onclick="startScan()" title="Rechnung scannen">📷</button>
+</div>
+
+<!-- ══ SCAN ══ -->
+<div class="screen" id="screen-scan">
+  <div class="scan-header">
+    <button class="back-btn" onclick="stopScan()">←</button>
+    <div class="scan-title">Rechnung scannen</div>
+  </div>
+  <video id="video-el" autoplay playsinline muted></video>
+  <canvas id="snap-canvas"></canvas>
+  <div class="scan-overlay-ui">
+    <div class="scan-frame">
+      <div class="c1"></div>
+      <div class="scan-line-anim"></div>
+    </div>
+    <div class="scan-hint">Halte die Rechnung in den Rahmen</div>
+  </div>
+  <div class="shutter-area">
+    <button class="shutter-btn" onclick="takePhoto()"></button>
+    <div class="shutter-hint">Tippen zum Aufnehmen</div>
+  </div>
+</div>
+
+<!-- ══ ANALYSIS ══ -->
+<div class="screen" id="screen-analysis">
+  <div class="analysis-header">
+    <button class="back-btn" style="color:var(--ink);font-size:1.3rem" onclick="showScreen('screen-main')">←</button>
+    <h2>KI-Analyse</h2>
+  </div>
+  <img id="preview-img" class="preview-img" src="" alt="Rechnung">
+  <div class="analysis-body">
+    <div class="ai-status" id="ai-status">
+      <div class="ai-spinner"></div>
+      <div>
+        <p>KI analysiert Rechnung…</p>
+        <small>Artikel · Marken · Kategorien</small>
+      </div>
+    </div>
+    <div class="detected-list" id="detected-list"></div>
+  </div>
+  <div class="confirm-bar" id="confirm-bar" style="display:none">
+    <button class="confirm-btn secondary" onclick="showScreen('screen-main')">Verwerfen</button>
+    <button class="confirm-btn primary" onclick="confirmItems()">✓ Alle hinzufügen</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──
+let apiKey = localStorage.getItem('pantry_key') || '';
+let inventory = JSON.parse(localStorage.getItem('pantry_inv') || '[]');
+let detectedItems = [];
+let stream = null;
+let activeCat = 'Alle';
+let searchQ = '';
+
+const CATS = ['Alle','Milchprodukte','Getreide','Snacks','Getränke','Fleisch','Gemüse','Obst','Backwaren','Tiefkühl','Sonstiges'];
+const CAT_SLUG = {
+  'Milchprodukte':'milch','Getreide':'getreide','Snacks':'snacks',
+  'Getränke':'getraenke','Fleisch':'fleisch','Gemüse':'gemuese',
+  'Obst':'obst','Backwaren':'backwaren','Tiefkühl':'tiefkuehl','Sonstiges':'sonstiges'
+};
+
+// ── INIT ──
+if (apiKey) {
+  document.getElementById('setup-key').value = apiKey;
+  showScreen('screen-main');
+  renderAll();
+}
+
+function startApp() {
+  const k = document.getElementById('setup-key').value.trim();
+  if (!k || !k.startsWith('sk-')) { toast('⚠ Bitte gültigen API Key eingeben'); return; }
+  apiKey = k;
+  localStorage.setItem('pantry_key', k);
+  showScreen('screen-main');
+  renderAll();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── RENDER ──
+function renderAll() {
+  renderCats();
+  renderStats();
+  renderInv();
+}
+
+function renderCats() {
+  const el = document.getElementById('cat-scroll');
+  el.innerHTML = CATS.map(c => `
+    <div class="cat-pill ${c===activeCat?'active':''}" onclick="setCat('${c}')">${c}</div>
+  `).join('');
+}
+
+function renderStats() {
+  const total = inventory.length;
+  const low = inventory.filter(i=>i.qty>0&&i.qty<3).length;
+  const empty = inventory.filter(i=>i.qty===0).length;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="s-num">${total}</div><div class="s-lbl">Artikel</div></div>
+    <div class="stat-card"><div class="s-num" style="color:var(--amber)">${low}</div><div class="s-lbl">Niedrig</div></div>
+    <div class="stat-card"><div class="s-num" style="color:var(--red)">${empty}</div><div class="s-lbl">Leer</div></div>
+  `;
+}
+
+function renderInv() {
+  const el = document.getElementById('inv-list');
+  let items = inventory;
+  if (activeCat !== 'Alle') items = items.filter(i=>i.category===activeCat);
+  if (searchQ) items = items.filter(i=>i.name.toLowerCase().includes(searchQ)||
+    (i.brand||'').toLowerCase().includes(searchQ));
+
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-list"><span class="e-icon">${activeCat==='Alle'?'📦':'🔍'}</span><p>${activeCat==='Alle'?'Noch keine Artikel.<br>Tippe auf 📷!':'Keine Artikel gefunden.'}</p></div>`;
+    return;
+  }
+  el.innerHTML = items.map((item,i) => {
+    const status = item.qty===0?'status-empty':item.qty<3?'status-low':'';
+    const slug = CAT_SLUG[item.category]||'sonstiges';
+    return `
+    <div class="inv-item ${status}" style="animation-delay:${i*40}ms">
+      <div class="inv-emoji-wrap">${item.emoji}</div>
+      <div class="inv-info">
+        <div class="inv-name">${item.name}</div>
+        <div class="inv-sub">${item.brand||'—'} · ${item.unit}</div>
+        <span class="inv-cat-tag cat-${slug}">${item.category}</span>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-b minus" onclick="changeQty(${item.id},-1)">−</button>
+        <div class="qty-num">${item.qty}</div>
+        <button class="qty-b plus" onclick="changeQty(${item.id},+1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setCat(c) { activeCat=c; renderAll(); }
+function filterInv(v) { searchQ=v.toLowerCase(); renderInv(); }
+
+function changeQty(id, delta) {
+  const item = inventory.find(i=>i.id===id);
+  if (!item) return;
+  item.qty = Math.max(0, item.qty+delta);
+  if (delta<0) toast(`${item.emoji} ${item.name} verbraucht → ${item.qty} ${item.unit} übrig`);
+  saveInv();
+  renderAll();
+}
+
+function saveInv() { localStorage.setItem('pantry_inv', JSON.stringify(inventory)); }
+
+// ── CAMERA ──
+async function startScan() {
+  showScreen('screen-scan');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width:{ideal:1920}, height:{ideal:1080} }
+    });
+    document.getElementById('video-el').srcObject = stream;
+  } catch(e) {
+    toast('⚠ Kamera nicht verfügbar — bitte Berechtigung erlauben');
+    showScreen('screen-main');
+  }
+}
+
+function stopScan() {
+  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  showScreen('screen-main');
+}
+
+function takePhoto() {
+  const video = document.getElementById('video-el');
+  const canvas = document.getElementById('snap-canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  stopScan();
+  showAnalysis(dataUrl);
+}
+
+// ── ANALYSIS ──
+function showAnalysis(dataUrl) {
+  showScreen('screen-analysis');
+  document.getElementById('preview-img').src = dataUrl;
+  document.getElementById('detected-list').innerHTML = '';
+  document.getElementById('confirm-bar').style.display = 'none';
+  document.getElementById('ai-status').style.display = 'flex';
+  document.getElementById('ai-status').innerHTML = `
+    <div class="ai-spinner"></div>
+    <div><p>KI analysiert Rechnung…</p><small>Artikel · Marken · Kategorien</small></div>`;
+  analyzeImage(dataUrl);
+}
+
+async function analyzeImage(dataUrl) {
+  const base64 = dataUrl.split(',')[1];
+
+  const prompt = `Analysiere diesen Kassenbon / diese Rechnung aus einem Supermarkt.
+
+Extrahiere ALLE Artikel und gib sie als JSON-Array zurück. Antworte NUR mit dem JSON, kein Markdown.
+
+Format:
+[
+  {
+    "raw": "UNCLE BEN'S PARBO 500G",
+    "name": "Reis",
+    "brand": "Uncle Ben's",
+    "category": "Getreide",
+    "emoji": "🍚",
+    "qty": 1,
+    "unit": "Pkg"
+  }
+]
+
+Kategorien (genau eine wählen): Milchprodukte, Getreide, Snacks, Getränke, Fleisch, Gemüse, Obst, Backwaren, Tiefkühl, Sonstiges
+
+Regeln:
+- name: kurzer allgemeiner deutscher Name (z.B. "Reis", "Milch", "Schokolade")
+- brand: Markenname falls erkennbar, sonst null
+- emoji: passendes einzelnes Emoji
+- qty: erkannte Menge (Standard: 1)
+- unit: Stk / L / Kg / Pkg / g / ml
+- Preise, Rabatte und Gesamtbeträge NICHT aufnehmen
+- Falls kein Kassenbon erkennbar: leeres Array []`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const text = data.content.map(b=>b.text||'').join('');
+    const clean = text.replace(/```json|```/g,'').trim();
+    detectedItems = JSON.parse(clean);
+
+    document.getElementById('ai-status').style.display = 'none';
+
+    if (!detectedItems.length) {
+      document.getElementById('detected-list').innerHTML = `
+        <div class="empty-list"><span class="e-icon">🤷</span><p>Keine Artikel erkannt.<br>Bitte deutlicheres Foto aufnehmen.</p></div>`;
+      return;
+    }
+
+    document.getElementById('detected-list').innerHTML = detectedItems.map((item,i) => {
+      const slug = CAT_SLUG[item.category]||'sonstiges';
+      return `
+      <div class="detected-item" style="animation-delay:${i*50}ms">
+        <div class="det-emoji">${item.emoji}</div>
+        <div class="det-info">
+          <div class="det-name">${item.name}</div>
+          <div class="det-brand">${item.brand||'Kein Markenname'} · <span style="color:var(--ink2)">${item.raw}</span></div>
+          <div class="det-tags">
+            <span class="det-tag cat cat-${slug}">${item.category}</span>
+            <span class="det-tag qty">${item.qty} ${item.unit}</span>
+          </div>
+        </div>
+        <div class="det-check">✅</div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('confirm-bar').style.display = 'flex';
+
+  } catch(e) {
+    document.getElementById('ai-status').innerHTML = `
+      <span style="font-size:1.5rem">⚠️</span>
+      <div><p style="color:var(--red)">Fehler</p><small>${e.message}</small></div>`;
+  }
+}
+
+function confirmItems() {
+  const maxId = inventory.length ? Math.max(...inventory.map(i=>i.id)) : 0;
+  detectedItems.forEach((item, idx) => {
+    const existing = inventory.find(i =>
+      i.name.toLowerCase() === item.name.toLowerCase() &&
+      (i.brand||'') === (item.brand||'')
+    );
+    if (existing) {
+      existing.qty += item.qty;
+    } else {
+      inventory.push({
+        id: maxId + idx + 1,
+        name: item.name,
+        brand: item.brand || null,
+        category: item.category,
+        emoji: item.emoji,
+        qty: item.qty,
+        unit: item.unit
+      });
+    }
+  });
+  saveInv();
+  showScreen('screen-main');
+  renderAll();
+  toast(`✓ ${detectedItems.length} Artikel ins Inventar übernommen!`);
+}
+
+// ── TOAST ──
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

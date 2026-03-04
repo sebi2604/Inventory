@@ -672,6 +672,8 @@ function changeQty(id, delta) {
 
 // ── JSONBIN ──
 async function saveInv() {
+  // always save to local cache immediately
+  localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
   try {
     await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
       method: 'PUT',
@@ -685,18 +687,30 @@ async function saveInv() {
 }
 
 async function loadFromDB() {
+  // immediately show cached version so screen is never empty
+  const cached = localStorage.getItem('pantry_inv_cache');
+  if (cached) {
+    inventory = JSON.parse(cached);
+    renderAll();
+  }
   try {
     const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
       headers: { 'X-Master-Key': fbUrl }
     });
     const data = await res.json();
     inventory = data?.record?.inventory || [];
+    localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
     renderAll();
     startPolling();
   } catch(e) {
-    toast('⚠ JSONBin nicht erreichbar — Keys prüfen');
-    inventory = [];
-    renderAll();
+    if (!cached) {
+      toast('⚠ JSONBin nicht erreichbar — Keys prüfen');
+      inventory = [];
+      renderAll();
+    } else {
+      toast('⚠ Offline — zeige gespeicherte Daten');
+      startPolling();
+    }
   }
 }
 

@@ -702,13 +702,19 @@ async function syncFromDB() {
       headers: { 'X-Master-Key': fbUrl }
     });
     const data = await res.json();
-    const fresh = data?.record?.inventory || [];
-    inventory = fresh;
-    localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
-    renderAll();
+    const fresh = data?.record?.inventory;
+    // ONLY update if JSONBin has MORE items than local cache
+    // This prevents JSONBin from wiping local data
+    if (Array.isArray(fresh) && fresh.length >= inventory.length) {
+      inventory = fresh;
+      localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
+      renderAll();
+    } else if (inventory.length > 0) {
+      // local has more data - push it back to JSONBin
+      saveInv();
+    }
     startPolling();
   } catch(e) {
-    // keep showing cached data, just start polling to retry
     startPolling();
   }
 }
@@ -725,8 +731,9 @@ function startPolling() {
         headers: { 'X-Master-Key': fbUrl }
       });
       const data = await res.json();
-      const fresh = data?.record?.inventory || [];
-      if (JSON.stringify(fresh) !== JSON.stringify(inventory)) {
+      const fresh = data?.record?.inventory;
+      if (Array.isArray(fresh) && fresh.length >= inventory.length &&
+          JSON.stringify(fresh) !== JSON.stringify(inventory)) {
         inventory = fresh;
         localStorage.setItem('pantry_inv_cache', JSON.stringify(inventory));
         renderAll();
